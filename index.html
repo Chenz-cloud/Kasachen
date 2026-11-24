@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KasBuk Reseller - Pembukuan & Cloud Sync</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col pb-24 md:pb-10 selection:bg-brand-500 selection:text-white">
+
+  <!-- TOP APP HEADER -->
+  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 shadow-md">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+      <!-- Logo & Title -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-brand-500/20 text-white">
+          <i data-lucide="book-open-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight tracking-tight text-white flex items-center gap-1.5">
+            KasBuk <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 font-semibold border border-brand-500/30">Reseller</span>
+          </h1>
+          <p class="text-[11px] text-slate-400">Pembukuan, Utang & Piutang</p>
+        </div>
+      </div>
+
+      <!-- Cloud Status & Quick Utility Buttons -->
+      <div class="flex items-center gap-2">
+        <!-- Status Pill -->
+        <button id="btn-cloud-status" onclick="openFirebaseModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border shadow-sm cursor-pointer bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20">
+          <span id="cloud-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="cloud-text">Lokal Saja</span>
+          <i data-lucide="settings" class="w-3.5 h-3.5 ml-0.5 text-slate-400"></i>
+        </button>
+
+        <!-- Quick Sync Action -->
+        <button onclick="triggerManualSync()" title="Sinkronisasi Sekarang" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition active:scale-95">
+          <i data-lucide="refresh-cw" id="sync-icon" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Backup & Utility Menu Trigger -->
+        <button onclick="openUtilityModal()" title="Ekspor / Impor Data" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition active:scale-95">
+          <i data-lucide="download-cloud" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-6xl mx-auto w-full px-3 sm:px-6 pt-4 flex-1 space-y-6">
+
+    <!-- FINANCIAL DASHBOARD & PROFIT/LOSS -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden">
+      <!-- Background Ambient Glow -->
+      <div class="absolute -right-16 -top-16 w-48 h-48 bg-brand-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-base font-bold text-slate-200 flex items-center gap-2">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 text-brand-400"></i>
+            Ringkasan Keuangan
+          </h2>
+          <p class="text-xs text-slate-400">Laporan realtime berdasarkan filter waktu</p>
+        </div>
+
+        <!-- Month & Year Filter Dropdowns -->
+        <div class="flex items-center gap-2">
+          <select id="filter-month" onchange="renderApp()" class="bg-slate-800 text-slate-200 border border-slate-700 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-brand-500">
+            <option value="all">Semua Bulan</option>
+            <option value="0">Januari</option>
+            <option value="1">Februari</option>
+            <option value="2">Maret</option>
+            <option value="3">April</option>
+            <option value="4">Mei</option>
+            <option value="5">Juni</option>
+            <option value="6">Juli</option>
+            <option value="7">Agustus</option>
+            <option value="8">September</option>
+            <option value="9">Oktober</option>
+            <option value="10">November</option>
+            <option value="11">Desember</option>
+          </select>
+          
+          <select id="filter-year" onchange="renderApp()" class="bg-slate-800 text-slate-200 border border-slate-700 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-brand-500">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+      </div>
+
+      <!-- Main Metric Highlight Card: Net Profit / Laba Kotor -->
+      <div class="bg-gradient-to-r from-slate-800/90 to-slate-800/40 border border-slate-700/60 rounded-xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Estimasi Laba Kotor (Penjualan - Pembelian)</span>
+          <div id="stat-laba-kotor" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-0.5">Rp 0</div>
+          <p class="text-[11px] text-slate-400 mt-1" id="stat-laba-desc">*Belum dikurangi operasional di luar transaksi barang</p>
+        </div>
+        <div id="badge-laba-status" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 self-start sm:self-center">
+          Untung
+        </div>
+      </div>
+
+      <!-- Grid of 6 Detailed Metric Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        <!-- Omzet Penjualan -->
+        <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-3 sm:p-4">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-xs font-medium">Omzet Penjualan</span>
+            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div id="stat-omzet" class="text-base sm:text-lg font-bold text-slate-100">Rp 0</div>
+          <span id="stat-omzet-count" class="text-[10px] text-slate-400">0 transaksi</span>
+        </div>
+
+        <!-- Modal Pembelian -->
+        <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-3 sm:p-4">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-xs font-medium">Modal Pembelian</span>
+            <i data-lucide="shopping-bag" class="w-4 h-4 text-rose-400"></i>
+          </div>
+          <div id="stat-pembelian" class="text-base sm:text-lg font-bold text-slate-100">Rp 0</div>
+          <span id="stat-pembelian-count" class="text-[10px] text-slate-400">0 kulakan</span>
+        </div>
+
+        <!-- Kas Masuk -->
+        <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-3 sm:p-4">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-xs font-medium">Kas Masuk (Piutang)</span>
+            <i data-lucide="arrow-down-left" class="w-4 h-4 text-teal-400"></i>
+          </div>
+          <div id="stat-kas-masuk" class="text-base sm:text-lg font-bold text-teal-400">Rp 0</div>
+          <span class="text-[10px] text-slate-400">Pelunasan dari toko</span>
+        </div>
+
+        <!-- Kas Keluar -->
+        <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-3 sm:p-4">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-xs font-medium">Kas Keluar (Utang)</span>
+            <i data-lucide="arrow-up-right" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <div id="stat-kas-keluar" class="text-base sm:text-lg font-bold text-amber-400">Rp 0</div>
+          <span class="text-[10px] text-slate-400">Bayar ke supplier</span>
+        </div>
+
+        <!-- Sisa Piutang Toko -->
+        <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-3 sm:p-4">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-xs font-medium">Sisa Piutang Toko</span>
+            <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i>
+          </div>
+          <div id="stat-piutang-toko" class="text-base sm:text-lg font-bold text-indigo-400">Rp 0</div>
+          <span class="text-[10px] text-slate-400">Belum ditagih/lunas</span>
+        </div>
+
+        <!-- Sisa Utang Supplier -->
+        <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-3 sm:p-4">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-xs font-medium">Utang ke Supplier</span>
+            <i data-lucide="alert-circle" class="w-4 h-4 text-orange-400"></i>
+          </div>
+          <div id="stat-utang-supplier" class="text-base sm:text-lg font-bold text-orange-400">Rp 0</div>
+          <span class="text-[10px] text-slate-400">Tanggungan pembayaran</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN ACTION BAR: INPUT FORM TRIGGER BUTTONS -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <button onclick="openFormModal('pembelian')" class="flex items-center justify-center gap-2 p-3 bg-rose-600/10 hover:bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-xl transition font-semibold text-xs sm:text-sm active:scale-95 shadow-sm">
+        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+        + Pembelian
+      </button>
+      <button onclick="openFormModal('penjualan')" class="flex items-center justify-center gap-2 p-3 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-xl transition font-semibold text-xs sm:text-sm active:scale-95 shadow-sm">
+        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+        + Penjualan
+      </button>
+      <button onclick="openFormModal('bayar_utang')" class="flex items-center justify-center gap-2 p-3 bg-amber-600/10 hover:bg-amber-600/20 text-amber-400 border border-amber-500/30 rounded-xl transition font-semibold text-xs sm:text-sm active:scale-95 shadow-sm">
+        <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+        Bayar Utang
+      </button>
+      <button onclick="openFormModal('bayar_piutang')" class="flex items-center justify-center gap-2 p-3 bg-teal-600/10 hover:bg-teal-600/20 text-teal-400 border border-teal-500/30 rounded-xl transition font-semibold text-xs sm:text-sm active:scale-95 shadow-sm">
+        <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+        Terima Piutang
+      </button>
+    </section>
+
+    <!-- RECAP TABS NAVIGATION -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+      <!-- Tabs Header -->
+      <div class="flex border-b border-slate-800 overflow-x-auto no-scrollbar bg-slate-950/40">
+        <button id="tab-btn-pembelian" onclick="switchTab('pembelian')" class="tab-btn flex-1 min-w-[120px] px-4 py-3 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition">
+          <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+          Pembelian
+        </button>
+        <button id="tab-btn-penjualan" onclick="switchTab('penjualan')" class="tab-btn flex-1 min-w-[120px] px-4 py-3 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition">
+          <i data-lucide="store" class="w-4 h-4"></i>
+          Penjualan
+        </button>
+        <button id="tab-btn-utang" onclick="switchTab('utang')" class="tab-btn flex-1 min-w-[120px] px-4 py-3 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition">
+          <i data-lucide="credit-card" class="w-4 h-4"></i>
+          Utang Supplier
+        </button>
+        <button id="tab-btn-piutang" onclick="switchTab('piutang')" class="tab-btn flex-1 min-w-[120px] px-4 py-3 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          Piutang Toko
+        </button>
+      </div>
+
+      <!-- SEARCH & FILTER BAR WITHIN TAB -->
+      <div class="p-3 sm:p-4 bg-slate-900 border-b border-slate-800 flex flex-col sm:flex-row gap-2 justify-between items-center">
+        <div class="relative w-full sm:w-72">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+          <input type="text" id="tab-search-input" onkeyup="renderApp()" placeholder="Cari barang / nama toko / supplier..." class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-xl pl-9 pr-3 py-2 focus:outline-none focus:border-brand-500" />
+        </div>
+        <div id="tab-sub-counter" class="text-xs text-slate-400 self-end sm:self-center">
+          Menampilkan 0 data
+        </div>
+      </div>
+
+      <!-- TAB CONTENTS -->
+      <div class="p-3 sm:p-5">
+
+        <!-- TAB 1: REKAP PEMBELIAN -->
+        <div id="tab-content-pembelian" class="tab-pane hidden space-y-3">
+          <div id="list-pembelian" class="space-y-2.5">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- TAB 2: REKAP PENJUALAN -->
+        <div id="tab-content-penjualan" class="tab-pane hidden space-y-3">
+          <div id="list-penjualan" class="space-y-2.5">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- TAB 3: REKAP UTANG SUPPLIER (FIFO) -->
+        <div id="tab-content-utang" class="tab-pane hidden space-y-4">
+          <div id="list-utang-supplier" class="space-y-4">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- TAB 4: REKAP PIUTANG TOKO (FIFO & WHATSAPP) -->
+        <div id="tab-content-piutang" class="tab-pane hidden space-y-4">
+          <div id="list-piutang-toko" class="space-y-4">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- AUTOCOMPLETE DATALISTS FOR SUPPLIER & STORE NAMES -->
+  <datalist id="list-suppliers"></datalist>
+  <datalist id="list-stores"></datalist>
+
+  <!-- MODAL 1: TRANSACTION INPUT / EDIT FORM -->
+  <div id="modal-form" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 hidden overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl my-auto">
+      <!-- Modal Header -->
+      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+        <h3 id="modal-form-title" class="font-bold text-base text-slate-100 flex items-center gap-2">
+          <i data-lucide="edit-3" class="w-4 h-4 text-brand-400"></i>
+          Input Transaksi
+        </h3>
+        <button onclick="closeFormModal()" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <form id="tx-form" onsubmit="handleFormSubmit(event)" class="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+        <input type="hidden" id="form-tx-id" value="" />
+        <input type="hidden" id="form-tx-type" value="penjualan" />
+
+        <!-- Date & Payment Method -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Tanggal Transaksi</label>
+            <input type="date" id="form-date" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Status Pembayaran</label>
+            <div class="flex items-center gap-2 h-[38px] px-3 bg-slate-800 border border-slate-700 rounded-xl">
+              <input type="checkbox" id="form-is-paid" checked class="w-4 h-4 accent-brand-500 rounded cursor-pointer" />
+              <label for="form-is-paid" class="text-xs text-slate-200 font-medium cursor-pointer select-none">
+                Tunai / Lunas Langsung
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Supplier / Store Name Input -->
+        <div>
+          <label id="lbl-entity-name" class="block text-xs font-medium text-slate-400 mb-1">Nama Supplier / Toko</label>
+          <input type="text" id="form-entity" required placeholder="Contoh: Toko Berkah / PT Busana Supplier" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500" />
+        </div>
+
+        <!-- Items Container (Only for Pembelian & Penjualan) -->
+        <div id="container-items-section" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-semibold text-slate-300">Rincian Barang</label>
+            <button type="button" onclick="addItemRow()" class="text-xs font-semibold text-brand-400 hover:text-brand-300 flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Item
+            </button>
+          </div>
+          
+          <div id="items-list-container" class="space-y-2.5">
+            <!-- Dynamic rows inserted here -->
+          </div>
+        </div>
+
+        <!-- Single Nominal Input (Only for Bayar Utang & Bayar Piutang) -->
+        <div id="container-single-amount" class="hidden">
+          <label class="block text-xs font-medium text-slate-400 mb-1">Nominal Pembayaran (Rp)</label>
+          <input type="number" id="form-single-amount" min="1" placeholder="Masukkan jumlah bayar" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 font-bold text-emerald-400" />
+        </div>
+
+        <!-- Total Calculation Preview -->
+        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">Total Transaksi:</span>
+          <span id="form-total-preview" class="text-lg font-bold text-brand-400">Rp 0</span>
+        </div>
+
+        <!-- Notes Input -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Catatan Tambahan (Opsional)</label>
+          <input type="text" id="form-notes" placeholder="No. Nota, No. Resi, atau catatan pelunasan" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500" />
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-2">
+          <button type="submit" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm py-2.5 rounded-xl transition shadow-lg shadow-brand-600/20 active:scale-95">
+            Simpan Transaksi
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: FIREBASE REALTIME DATABASE CLOUD SETTINGS -->
+  <div id="modal-firebase" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 hidden overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl my-auto">
+      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+        <h3 class="font-bold text-base text-slate-100 flex items-center gap-2">
+          <i data-lucide="cloud" class="w-4 h-4 text-emerald-400"></i>
+          Pengaturan Firebase Cloud
+        </h3>
+        <button onclick="closeFirebaseModal()" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 max-h-[80vh] overflow-y-auto text-xs">
+        <p class="text-slate-300 leading-relaxed">
+          Hubungkan KasBuk dengan **Firebase Realtime Database REST API**. Tanpa Apps Script, tanpa instalasi rumit, langsung tersinkronisasi otomatis!
+        </p>
+
+        <!-- Input URL -->
+        <div>
+          <label class="block font-semibold text-slate-200 mb-1">URL Database Firebase Anda:</label>
+          <input type="text" id="input-fb-url" placeholder="https://proyek-anda-default-rtdb.firebaseio.com" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-brand-500 font-mono text-xs" />
+          <p class="text-[11px] text-slate-400 mt-1">Data akan disimpan otomatis di lokasi `/kasbuk_reseller.json`</p>
+        </div>
+
+        <!-- Step-by-Step Tutorial -->
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2 text-slate-300">
+          <div class="font-semibold text-slate-200 flex items-center gap-1.5 text-xs text-brand-400">
+            <i data-lucide="help-circle" class="w-4 h-4"></i>
+            Cara Mendapatkan URL Firebase (1 Menit via HP):
+          </div>
+          <ol class="list-decimal list-inside space-y-1.5 text-[11px] text-slate-400">
+            <li>Buka <a href="https://console.firebase.google.com" target="_blank" class="text-brand-400 underline">console.firebase.google.com</a> & Login akun Google.</li>
+            <li>Klik **Add Project** (Buat Proyek) & beri nama proyek bebas.</li>
+            <li>Di menu samping, pilih **Build** &rarr; **Realtime Database**.</li>
+            <li>Klik **Create Database**, pilih **Start in Test Mode**, lalu Klik **Enable**.</li>
+            <li>Salin URL utama yang muncul (berakhir `.firebaseio.com` atau `.firebasedatabase.app`) lalu tempel di atas!</li>
+          </ol>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2 pt-2">
+          <button onclick="saveFirebaseConfig()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition shadow-lg shadow-emerald-600/20 active:scale-95">
+            Simpan & Tes Koneksi
+          </button>
+          <button onclick="clearFirebaseConfig()" class="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded-xl border border-slate-700 transition">
+            Putuskan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: UTILITY (BACKUP, RESTORE, CSV EXPORT) -->
+  <div id="modal-utility" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 hidden overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl my-auto">
+      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+        <h3 class="font-bold text-base text-slate-100 flex items-center gap-2">
+          <i data-lucide="database" class="w-4 h-4 text-brand-400"></i>
+          Cadangan & Ekspor Data
+        </h3>
+        <button onclick="closeUtilityModal()" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-3">
+        <!-- Download Backup JSON -->
+        <button onclick="exportJSONBackup()" class="w-full flex items-center justify-between p-3.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 rounded-xl transition text-left group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center border border-brand-500/20">
+              <i data-lucide="file-json" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-slate-200">Unduh Cadangan JSON</div>
+              <div class="text-[11px] text-slate-400">Simpan offline ke memori HP/Perangkat</div>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 group-hover:text-slate-300"></i>
+        </button>
+
+        <!-- Restore JSON -->
+        <label class="w-full flex items-center justify-between p-3.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 rounded-xl transition text-left cursor-pointer group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center border border-teal-500/20">
+              <i data-lucide="upload" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-slate-200">Pulihkan dari File JSON</div>
+              <div class="text-[11px] text-slate-400">Impor cadangan data sebelumnya</div>
+            </div>
+          </div>
+          <input type="file" accept=".json" onchange="importJSONBackup(event)" class="hidden" />
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 group-hover:text-slate-300"></i>
+        </label>
+
+        <!-- Export CSV -->
+        <button onclick="exportCSV()" class="w-full flex items-center justify-between p-3.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 rounded-xl transition text-left group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+              <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-slate-200">Ekspor Laporan CSV (Excel)</div>
+              <div class="text-[11px] text-slate-400">Bisa dibuka langsung di Microsoft Excel</div>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 group-hover:text-slate-300"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: CONFIRMATION DIALOG (CUSTOM REPLACEMENT FOR CONFIRM/ALERT) -->
+  <div id="modal-confirm" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h4 id="confirm-title" class="font-bold text-sm text-slate-100">Konfirmasi Hapus</h4>
+          <p id="confirm-msg" class="text-xs text-slate-400">Apakah Anda yakin ingin menghapus data ini?</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 pt-2">
+        <button id="confirm-btn-cancel" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition">
+          Batal
+        </button>
+        <button id="confirm-btn-ok" class="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold transition shadow-lg shadow-rose-600/20">
+          Hapus
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION BANNER -->
+  <div id="toast-container" class="fixed bottom-4 right-4 left-4 sm:left-auto z-50 pointer-events-none space-y-2"></div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    // --- STATE MANAGEMENT ---
+    const STORAGE_KEY = 'kasbuk_reseller_data';
+    const FIREBASE_URL_KEY = 'kasbuk_firebase_url';
+
+    let state = {
+      transactions: [],
+      activeTab: 'penjualan',
+      firebaseUrl: '',
+      isCloudActive: false
+    };
+
+    // --- INITIALIZATION ---
+    window.onload = function() {
+      // 1. Load Local Storage
+      loadLocalStorage();
+
+      // 2. Load Firebase URL & Auto-Test Cloud
+      state.firebaseUrl = localStorage.getItem(FIREBASE_URL_KEY) || '';
+      if (state.firebaseUrl) {
+        document.getElementById('input-fb-url').value = state.firebaseUrl;
+        syncFromFirebase(true); // silent fetch on load
+      } else {
+        updateCloudStatusUI(false);
+      }
+
+      // 3. Initialize Year Dropdown Options
+      initYearDropdown();
+
+      // 4. Set Default Date to Today
+      document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
+
+      // 5. Initial Render
+      renderApp();
+
+      // 6. Initialize Lucide Icons
+      lucide.createIcons();
+    };
+
+    // --- LOCAL STORAGE HELPERS ---
+    function loadLocalStorage() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        try {
+          state.transactions = JSON.parse(raw);
+          normalizeData();
+        } catch (e) {
+          console.error("Failed to parse local data", e);
+          state.transactions = [];
+        }
+      } else {
+        // Load rich sample data if completely fresh
+        state.transactions = getSampleData();
+        saveLocalStorage();
+      }
+    }
+
+    function saveLocalStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.transactions));
+    }
+
+    function normalizeData() {
+      if (!Array.isArray(state.transactions)) {
+        state.transactions = [];
+        return;
+      }
+      state.transactions.forEach(t => {
+        t.total = Number(t.total || t.amount || 0);
+        t.isPaid = t.isPaid === undefined ? true : Boolean(t.isPaid);
+        if (t.items && Array.isArray(t.items)) {
+          t.items.forEach(i => {
+            i.qty = Number(i.qty || 1);
+            i.price = Number(i.price || 0);
+          });
+        }
+      });
+    }
+
+    // --- FIREBASE REST API HANDLER ---
+    function normalizeFirebaseUrl(url) {
+      if (!url) return '';
+      let clean = url.trim();
+      if (clean.endsWith('/')) clean = clean.slice(0, -1);
+      if (clean.endsWith('/kasbuk_reseller.json')) clean = clean.replace('/kasbuk_reseller.json', '');
+      return clean;
+    }
+
+    function getFullEndpoint() {
+      const base = normalizeFirebaseUrl(state.firebaseUrl);
+      if (!base) return '';
+      return `${base}/kasbuk_reseller.json`;
+    }
+
+    async function syncToFirebase() {
+      const endpoint = getFullEndpoint();
+      if (!endpoint) return;
+
+      const syncIcon = document.getElementById('sync-icon');
+      if (syncIcon) syncIcon.classList.add('animate-spin');
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(state.transactions)
+        });
+
+        if (response.ok) {
+          updateCloudStatusUI(true);
+          showToast('Data tersinkronisasi ke Firebase Cloud', 'success');
+        } else {
+          updateCloudStatusUI(false);
+          showToast('Gagal terhubung ke Firebase (' + response.status + ')', 'error');
+        }
+      } catch (err) {
+        console.error("Firebase Sync Error:", err);
+        updateCloudStatusUI(false);
+        showToast('Koneksi Firebase terputus / URL tidak valid', 'error');
+      } finally {
+        if (syncIcon) syncIcon.classList.remove('animate-spin');
+      }
+    }
+
+    async function syncFromFirebase(silent = false) {
+      const endpoint = getFullEndpoint();
+      if (!endpoint) {
+        updateCloudStatusUI(false);
+        return;
+      }
+
+      const syncIcon = document.getElementById('sync-icon');
+      if (syncIcon) syncIcon.classList.add('animate-spin');
+
+      try {
+        const response = await fetch(endpoint);
+        if (response.ok) {
+          const cloudData = await response.json();
+          if (cloudData) {
+            // Firebase returns object with keys if transformed, or array
+            if (Array.isArray(cloudData)) {
+              state.transactions = cloudData;
+            } else if (typeof cloudData === 'object') {
+              state.transactions = Object.values(cloudData);
+            }
+            normalizeData();
+            saveLocalStorage();
+            renderApp();
+          }
+          updateCloudStatusUI(true);
+          if (!silent) showToast('Data berhasil dipulihkan dari Cloud', 'success');
+        } else {
+          updateCloudStatusUI(false);
+          if (!silent) showToast('Gagal mengunduh dari Firebase', 'error');
+        }
+      } catch (err) {
+        console.error("Firebase Restore Error:", err);
+        updateCloudStatusUI(false);
+        if (!silent) showToast('Koneksi Firebase gagal', 'error');
+      } finally {
+        if (syncIcon) syncIcon.classList.remove('animate-spin');
+      }
+    }
+
+    function triggerManualSync() {
+      if (!state.firebaseUrl) {
+        openFirebaseModal();
+        return;
+      }
+      syncToFirebase();
+    }
+
+    function updateCloudStatusUI(active) {
+      state.isCloudActive = active;
+      const dot = document.getElementById('cloud-dot');
+      const text = document.getElementById('cloud-text');
+      const btn = document.getElementById('btn-cloud-status');
+
+      if (active) {
+        dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+        text.innerText = "Firebase Aktif";
+        btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border shadow-sm cursor-pointer bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20";
+      } else {
+        dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+        text.innerText = state.firebaseUrl ? "Koneksi Offline" : "Lokal Saja";
+        btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border shadow-sm cursor-pointer bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20";
+      }
+    }
+
+    function saveFirebaseConfig() {
+      const input = document.getElementById('input-fb-url').value.trim();
+      state.firebaseUrl = normalizeFirebaseUrl(input);
+      localStorage.setItem(FIREBASE_URL_KEY, state.firebaseUrl);
+      
+      closeFirebaseModal();
+      if (state.firebaseUrl) {
+        syncToFirebase();
+      } else {
+        updateCloudStatusUI(false);
+        showToast('Koneksi cloud dikosongkan (Mode Lokal)', 'info');
+      }
+    }
+
+    function clearFirebaseConfig() {
+      document.getElementById('input-fb-url').value = '';
+      state.firebaseUrl = '';
+      localStorage.removeItem(FIREBASE_URL_KEY);
+      closeFirebaseModal();
+      updateCloudStatusUI(false);
+      showToast('Koneksi Firebase diputuskan', 'info');
+    }
+
+    // --- FINANCIAL CALCULATIONS & RENDER ---
+    function initYearDropdown() {
+      const select = document.getElementById('filter-year');
+      select.innerHTML = '';
+      
+      const currentYear = new Date().getFullYear();
+      let years = new Set([2026, currentYear]);
+
+      state.transactions.forEach(t => {
+        if (t.date) {
+          const y = new Date(t.date).getFullYear();
+          if (!isNaN(y)) years.add(y);
+        }
+      });
+
+      const sortedYears = Array.from(years).sort((a, b) => b - a);
+      sortedYears.forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.innerText = y;
+        select.appendChild(opt);
+      });
+      select.value = currentYear > 2026 ? currentYear : 2026;
+    }
+
+    function getFilteredTransactions() {
+      const monthFilter = document.getElementById('filter-month').value;
+      const yearFilter = document.getElementById('filter-year').value;
+
+      return state.transactions.filter(t => {
+        if (!t.date) return true;
+        const d = new Date(t.date);
+        const m = d.getMonth().toString();
+        const y = d.getFullYear().toString();
+
+        const monthMatch = (monthFilter === 'all' || monthFilter === m);
+        const yearMatch = (yearFilter === 'all' || yearFilter === y);
+        return monthMatch && yearMatch;
+      });
+    }
+
+    function renderDashboard() {
+      const filtered = getFilteredTransactions();
+
+      let omzet = 0;
+      let countPenjualan = 0;
+      let modalPembelian = 0;
+      let countPembelian = 0;
+      let kasMasuk = 0;
+      let kasKeluar = 0;
+
+      filtered.forEach(t => {
+        const amount = Number(t.total || t.amount || 0);
+        if (t.type === 'penjualan') {
+          omzet += amount;
+          countPenjualan++;
+        } else if (t.type === 'pembelian') {
+          modalPembelian += amount;
+          countPembelian++;
+        } else if (t.type === 'bayar_piutang') {
+          kasMasuk += amount;
+        } else if (t.type === 'bayar_utang') {
+          kasKeluar += amount;
+        }
+      });
+
+      const labaKotor = omzet - modalPembelian;
+
+      // Calculate Total Outstanding Receivables (Piutang) & Payables (Utang) across all time
+      const fifoUtang = calculateFIFOUtang();
+      const fifoPiutang = calculateFIFOPiutang();
+
+      let sisaUtangTotal = 0;
+      Object.values(fifoUtang).forEach(sup => sisaUtangTotal += sup.sisaUtang);
+
+      let sisaPiutangTotal = 0;
+      Object.values(fifoPiutang).forEach(tok => sisaPiutangTotal += tok.sisaPiutang);
+
+      // Render Dashboard Cards
+      document.getElementById('stat-laba-kotor').innerText = formatRupiah(labaKotor);
+      document.getElementById('stat-omzet').innerText = formatRupiah(omzet);
+      document.getElementById('stat-omzet-count').innerText = `${countPenjualan} transaksi`;
+
+      document.getElementById('stat-pembelian').innerText = formatRupiah(modalPembelian);
+      document.getElementById('stat-pembelian-count').innerText = `${countPembelian} kulakan`;
+
+      document.getElementById('stat-kas-masuk').innerText = formatRupiah(kasMasuk);
+      document.getElementById('stat-kas-keluar').innerText = formatRupiah(kasKeluar);
+
+      document.getElementById('stat-piutang-toko').innerText = formatRupiah(sisaPiutangTotal);
+      document.getElementById('stat-utang-supplier').innerText = formatRupiah(sisaUtangTotal);
+
+      // Laba Status Badge Styling
+      const badge = document.getElementById('badge-laba-status');
+      if (labaKotor >= 0) {
+        badge.innerText = "Laba Untung";
+        badge.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 self-start sm:self-center";
+      } else {
+        badge.innerText = "Rugi Kotor";
+        badge.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30 self-start sm:self-center";
+      }
+    }
+
+    // --- RECAP TABS RENDER ---
+    function renderApp() {
+      renderDashboard();
+      updateDatalists();
+
+      const searchKeyword = document.getElementById('tab-search-input').value.toLowerCase().trim();
+
+      switch (state.activeTab) {
+        case 'pembelian':
+          renderTabPembelian(searchKeyword);
+          break;
+        case 'penjualan':
+          renderTabPenjualan(searchKeyword);
+          break;
+        case 'utang':
+          renderTabUtang(searchKeyword);
+          break;
+        case 'piutang':
+          renderTabPiutang(searchKeyword);
+          break;
+      }
+
+      lucide.createIcons();
+    }
+
+    function switchTab(tabName) {
+      state.activeTab = tabName;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('text-brand-400', 'border-brand-500', 'bg-slate-900');
+        btn.classList.add('text-slate-400', 'border-transparent');
+      });
+
+      const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-400', 'border-transparent');
+        activeBtn.classList.add('text-brand-400', 'border-brand-500', 'bg-slate-900');
+      }
+
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
+      const activePane = document.getElementById(`tab-content-${tabName}`);
+      if (activePane) activePane.classList.remove('hidden');
+
+      renderApp();
+    }
+
+    // --- TAB 1: PEMBELIAN REKAP ---
+    function renderTabPembelian(search) {
+      const container = document.getElementById('list-pembelian');
+      const filtered = getFilteredTransactions().filter(t => t.type === 'pembelian');
+      const searchFiltered = filtered.filter(t => {
+        const entityMatch = t.entity.toLowerCase().includes(search);
+        const itemMatch = t.items && t.items.some(i => i.name.toLowerCase().includes(search));
+        return entityMatch || itemMatch;
+      });
+
+      document.getElementById('tab-sub-counter').innerText = `Menampilkan ${searchFiltered.length} transaksi pembelian`;
+
+      if (searchFiltered.length === 0) {
+        container.innerHTML = getEmptyStateHTML("Belum ada data transaksi pembelian");
+        return;
+      }
+
+      container.innerHTML = searchFiltered.map(t => `
+        <div class="bg-slate-800/40 border border-slate-800 hover:border-slate-700 rounded-xl p-3.5 transition flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">Pembelian</span>
+              <span class="text-xs font-bold text-slate-200">${escapeHTML(t.entity)}</span>
+              <span class="text-[11px] text-slate-500">• ${t.date}</span>
+            </div>
+            <div class="text-xs text-slate-300">
+              ${t.items && t.items.length > 0 ? t.items.map(i => `${escapeHTML(i.name)} (${i.qty} x ${formatRupiah(i.price)})`).join(', ') : '-'}
+            </div>
+            ${t.notes ? `<div class="text-[11px] text-slate-500 italic">Catatan: ${escapeHTML(t.notes)}</div>` : ''}
+          </div>
+          <div class="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-0 border-slate-800 pt-2 sm:pt-0">
+            <div class="text-left sm:text-right">
+              <div class="text-sm font-bold text-rose-400">${formatRupiah(t.total)}</div>
+              <span class="text-[10px] font-medium px-2 py-0.5 rounded-full ${t.isPaid ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}">
+                ${t.isPaid ? 'Tunai / Lunas' : 'Tempo (Utang)'}
+              </span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onclick="editTransaction('${t.id}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
+                <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="confirmDelete('${t.id}')" class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // --- TAB 2: PENJUALAN REKAP ---
+    function renderTabPenjualan(search) {
+      const container = document.getElementById('list-penjualan');
+      const filtered = getFilteredTransactions().filter(t => t.type === 'penjualan');
+      const searchFiltered = filtered.filter(t => {
+        const entityMatch = t.entity.toLowerCase().includes(search);
+        const itemMatch = t.items && t.items.some(i => i.name.toLowerCase().includes(search));
+        return entityMatch || itemMatch;
+      });
+
+      document.getElementById('tab-sub-counter').innerText = `Menampilkan ${searchFiltered.length} transaksi penjualan`;
+
+      if (searchFiltered.length === 0) {
+        container.innerHTML = getEmptyStateHTML("Belum ada data transaksi penjualan");
+        return;
+      }
+
+      container.innerHTML = searchFiltered.map(t => `
+        <div class="bg-slate-800/40 border border-slate-800 hover:border-slate-700 rounded-xl p-3.5 transition flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Penjualan</span>
+              <span class="text-xs font-bold text-slate-200">${escapeHTML(t.entity)}</span>
+              <span class="text-[11px] text-slate-500">• ${t.date}</span>
+            </div>
+            <div class="text-xs text-slate-300">
+              ${t.items && t.items.length > 0 ? t.items.map(i => `${escapeHTML(i.name)} (${i.qty} x ${formatRupiah(i.price)})`).join(', ') : '-'}
+            </div>
+            ${t.notes ? `<div class="text-[11px] text-slate-500 italic">Catatan: ${escapeHTML(t.notes)}</div>` : ''}
+          </div>
+          <div class="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-0 border-slate-800 pt-2 sm:pt-0">
+            <div class="text-left sm:text-right">
+              <div class="text-sm font-bold text-emerald-400">${formatRupiah(t.total)}</div>
+              <span class="text-[10px] font-medium px-2 py-0.5 rounded-full ${t.isPaid ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}">
+                ${t.isPaid ? 'Tunai / Lunas' : 'Tempo (Piutang)'}
+              </span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onclick="editTransaction('${t.id}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
+                <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="confirmDelete('${t.id}')" class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // --- FIFO RECONCILIATION FOR UTANG SUPPLIER ---
+    function calculateFIFOUtang() {
+      // Sort oldest to newest for FIFO matching
+      const sorted = [...state.transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const suppliers = {};
+
+      sorted.forEach(t => {
+        if (!t.entity) return;
+        const name = t.entity.trim();
+        if (!suppliers[name]) {
+          suppliers[name] = {
+            totalPembelian: 0,
+            totalBayarUtang: 0,
+            sisaUtang: 0,
+            pembelianList: [],
+            pembayaranList: []
+          };
+        }
+
+        const sup = suppliers[name];
+        const amount = Number(t.total || t.amount || 0);
+
+        if (t.type === 'pembelian') {
+          sup.totalPembelian += amount;
+          sup.pembelianList.push({ ...t, remaining: amount });
+          if (t.isPaid) {
+            sup.totalBayarUtang += amount;
+            sup.pembayaranList.push({ date: t.date, amount: amount, isAutoCash: true, notes: 'Bayar Tunai Langsung' });
+          }
+        } else if (t.type === 'bayar_utang') {
+          sup.totalBayarUtang += amount;
+          sup.pembayaranList.push({ date: t.date, amount: amount, isAutoCash: false, id: t.id, notes: t.notes });
+        }
+      });
+
+      // Apply Payments FIFO to Purchases
+      Object.values(suppliers).forEach(sup => {
+        let pool = sup.totalBayarUtang;
+        sup.pembelianList.forEach(item => {
+          if (pool >= item.total) {
+            pool -= item.total;
+            item.remaining = 0;
+          } else {
+            item.remaining = item.total - pool;
+            pool = 0;
+          }
+        });
+        sup.sisaUtang = Math.max(0, sup.totalPembelian - sup.totalBayarUtang);
+      });
+
+      return suppliers;
+    }
+
+    function renderTabUtang(search) {
+      const container = document.getElementById('list-utang-supplier');
+      const suppliers = calculateFIFOUtang();
+
+      const searchFilteredNames = Object.keys(suppliers).filter(name => name.toLowerCase().includes(search));
+
+      document.getElementById('tab-sub-counter').innerText = `Menampilkan ${searchFilteredNames.length} supplier`;
+
+      if (searchFilteredNames.length === 0) {
+        container.innerHTML = getEmptyStateHTML("Tidak ada tanggungan utang supplier");
+        return;
+      }
+
+      container.innerHTML = searchFilteredNames.map(name => {
+        const sup = suppliers[name];
+        const isLunas = sup.sisaUtang <= 0;
+
+        return `
+          <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 pb-3 border-b border-slate-800">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-400 flex items-center justify-center font-bold text-sm border border-orange-500/20">
+                  ${escapeHTML(name.charAt(0).toUpperCase())}
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-slate-100">${escapeHTML(name)}</h4>
+                  <div class="text-[11px] text-slate-400">Total Kulakan: ${formatRupiah(sup.totalPembelian)} | Total Dibayar: ${formatRupiah(sup.totalBayarUtang)}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between sm:justify-end gap-3">
+                <div class="text-left sm:text-right">
+                  <div class="text-xs text-slate-400">Sisa Utang</div>
+                  <div class="text-sm font-bold ${isLunas ? 'text-emerald-400' : 'text-orange-400'}">
+                    ${formatRupiah(sup.sisaUtang)}
+                  </div>
+                </div>
+                ${!isLunas ? `
+                  <button onclick="quickPayUtang('${escapeHTML(name)}', ${sup.sisaUtang})" class="px-3 py-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 text-xs font-semibold transition active:scale-95">
+                    + Bayar Utang
+                  </button>
+                ` : `
+                  <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold border border-emerald-500/20">
+                    Lunas
+                  </span>
+                `}
+              </div>
+            </div>
+
+            <!-- Rincian Nota & Pelunasan -->
+            <div class="space-y-1.5 text-xs">
+              <div class="font-semibold text-slate-400 text-[11px]">Riwayat Nota Pembelian:</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                ${sup.pembelianList.map(p => `
+                  <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80 flex justify-between items-center">
+                    <div>
+                      <div class="text-slate-300 font-medium">${p.date}</div>
+                      <div class="text-[11px] text-slate-500">${p.items && p.items.length ? escapeHTML(p.items[0].name) + (p.items.length > 1 ? ` +${p.items.length - 1} item` : '') : 'Nota'}</div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-slate-200 font-bold">${formatRupiah(p.total)}</div>
+                      <div class="text-[10px] ${p.remaining === 0 ? 'text-emerald-400' : 'text-orange-400 font-semibold'}">
+                        ${p.remaining === 0 ? 'Lunas' : `Sisa ${formatRupiah(p.remaining)}`}
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- FIFO RECONCILIATION FOR PIUTANG TOKO & WHATSAPP GENERATOR ---
+    function calculateFIFOPiutang() {
+      const sorted = [...state.transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const stores = {};
+
+      sorted.forEach(t => {
+        if (!t.entity) return;
+        const name = t.entity.trim();
+        if (!stores[name]) {
+          stores[name] = {
+            totalPenjualan: 0,
+            totalBayarPiutang: 0,
+            sisaPiutang: 0,
+            penjualanList: [],
+            pembayaranList: []
+          };
+        }
+
+        const tok = stores[name];
+        const amount = Number(t.total || t.amount || 0);
+
+        if (t.type === 'penjualan') {
+          tok.totalPenjualan += amount;
+          tok.penjualanList.push({ ...t, remaining: amount });
+          if (t.isPaid) {
+            tok.totalBayarPiutang += amount;
+            tok.pembayaranList.push({ date: t.date, amount: amount, isAutoCash: true, notes: 'Lunas Tunai' });
+          }
+        } else if (t.type === 'bayar_piutang') {
+          tok.totalBayarPiutang += amount;
+          tok.pembayaranList.push({ date: t.date, amount: amount, isAutoCash: false, id: t.id, notes: t.notes });
+        }
+      });
+
+      // Apply Collections FIFO to Sales Invoices
+      Object.values(stores).forEach(tok => {
+        let pool = tok.totalBayarPiutang;
+        tok.penjualanList.forEach(item => {
+          if (pool >= item.total) {
+            pool -= item.total;
+            item.remaining = 0;
+          } else {
+            item.remaining = item.total - pool;
+            pool = 0;
+          }
+        });
+        tok.sisaPiutang = Math.max(0, tok.totalPenjualan - tok.totalBayarPiutang);
+      });
+
+      return stores;
+    }
+
+    function renderTabPiutang(search) {
+      const container = document.getElementById('list-piutang-toko');
+      const stores = calculateFIFOPiutang();
+
+      const searchFilteredNames = Object.keys(stores).filter(name => name.toLowerCase().includes(search));
+
+      document.getElementById('tab-sub-counter').innerText = `Menampilkan ${searchFilteredNames.length} toko/pelanggan`;
+
+      if (searchFilteredNames.length === 0) {
+        container.innerHTML = getEmptyStateHTML("Tidak ada tanggungan piutang toko");
+        return;
+      }
+
+      container.innerHTML = searchFilteredNames.map(name => {
+        const tok = stores[name];
+        const isLunas = tok.sisaPiutang <= 0;
+
+        return `
+          <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 pb-3 border-b border-slate-800">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-sm border border-indigo-500/20">
+                  ${escapeHTML(name.charAt(0).toUpperCase())}
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-slate-100">${escapeHTML(name)}</h4>
+                  <div class="text-[11px] text-slate-400">Total Penjualan: ${formatRupiah(tok.totalPenjualan)} | Total Diterima: ${formatRupiah(tok.totalBayarPiutang)}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between sm:justify-end gap-2">
+                <div class="text-left sm:text-right mr-2">
+                  <div class="text-xs text-slate-400">Sisa Piutang</div>
+                  <div class="text-sm font-bold ${isLunas ? 'text-emerald-400' : 'text-indigo-400'}">
+                    ${formatRupiah(tok.sisaPiutang)}
+                  </div>
+                </div>
+
+                ${!isLunas ? `
+                  <button onclick="sendWhatsAppBilling('${escapeHTML(name)}')" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition flex items-center gap-1 active:scale-95">
+                    <i data-lucide="message-square" class="w-3.5 h-3.5"></i> Tagih WA
+                  </button>
+                  <button onclick="quickPayPiutang('${escapeHTML(name)}', ${tok.sisaPiutang})" class="px-3 py-1.5 rounded-lg bg-teal-600/20 hover:bg-teal-600/30 text-teal-300 border border-teal-500/30 text-xs font-semibold transition active:scale-95">
+                    + Terima
+                  </button>
+                ` : `
+                  <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold border border-emerald-500/20">
+                    Lunas
+                  </span>
+                `}
+              </div>
+            </div>
+
+            <!-- Rincian Nota Penjualan -->
+            <div class="space-y-1.5 text-xs">
+              <div class="font-semibold text-slate-400 text-[11px]">Daftar Nota Penjualan Toko:</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                ${tok.penjualanList.map(p => `
+                  <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80 flex justify-between items-center">
+                    <div>
+                      <div class="text-slate-300 font-medium">${p.date}</div>
+                      <div class="text-[11px] text-slate-500">${p.items && p.items.length ? escapeHTML(p.items[0].name) + (p.items.length > 1 ? ` +${p.items.length - 1} item` : '') : 'Nota'}</div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-slate-200 font-bold">${formatRupiah(p.total)}</div>
+                      <div class="text-[10px] ${p.remaining === 0 ? 'text-emerald-400' : 'text-indigo-400 font-semibold'}">
+                        ${p.remaining === 0 ? 'Lunas' : `Sisa ${formatRupiah(p.remaining)}`}
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // WHATSAPP BILLING GENERATOR
+    function sendWhatsAppBilling(storeName) {
+      const stores = calculateFIFOPiutang();
+      const tok = stores[storeName];
+      if (!tok || tok.sisaPiutang <= 0) {
+        showToast('Toko ini tidak memiliki sisa piutang', 'info');
+        return;
+      }
+
+      let msg = `Halo Yth. *${storeName}*,\n\n`;
+      msg += `Berikut rincian *Tagihan / Sisa Piutang* Pembelian Anda di KasBuk Reseller:\n\n`;
+
+      tok.penjualanList.filter(p => p.remaining > 0).forEach((p, idx) => {
+        msg += `${idx + 1}. *Nota ${p.date}*\n`;
+        if (p.items && p.items.length > 0) {
+          p.items.forEach(i => {
+            msg += `   - ${i.name} (${i.qty} x ${formatRupiah(i.price)})\n`;
+          });
+        }
+        msg += `   Subtotal: ${formatRupiah(p.total)}\n`;
+        msg += `   Sisa Belum Lunas: *${formatRupiah(p.remaining)}*\n\n`;
+      });
+
+      msg += `------------------------------------\n`;
+      msg += `*TOTAL TAGIHAN BELUM LUNAS: ${formatRupiah(tok.sisaPiutang)}*\n`;
+      msg += `------------------------------------\n\n`;
+      msg += `Mohon untuk konfirmasi jika pembayaran sudah ditransfer. Terima kasih banyak atas kerjasamanya! 🙏`;
+
+      const encoded = encodeURIComponent(msg);
+      window.open(`https://wa.me/?text=${encoded}`, '_blank');
+    }
+
+    // --- FORM MODAL & DYNAMIC ITEM ROW LOGIC ---
+    function openFormModal(type, existingData = null) {
+      document.getElementById('form-tx-id').value = existingData ? existingData.id : '';
+      document.getElementById('form-tx-type').value = type;
+
+      const titleEl = document.getElementById('modal-form-title');
+      const lblEntity = document.getElementById('lbl-entity-name');
+      const itemsSec = document.getElementById('container-items-section');
+      const singleSec = document.getElementById('container-single-amount');
+
+      if (type === 'pembelian') {
+        titleEl.innerHTML = `<i data-lucide="plus-circle" class="w-4 h-4 text-rose-400"></i> ${existingData ? 'Edit' : 'Input'} Pembelian Supplier`;
+        lblEntity.innerText = "Nama Supplier / Vendor";
+        itemsSec.classList.remove('hidden');
+        singleSec.classList.add('hidden');
+      } else if (type === 'penjualan') {
+        titleEl.innerHTML = `<i data-lucide="plus-circle" class="w-4 h-4 text-emerald-400"></i> ${existingData ? 'Edit' : 'Input'} Penjualan Toko`;
+        lblEntity.innerText = "Nama Toko / Pelanggan";
+        itemsSec.classList.remove('hidden');
+        singleSec.classList.add('hidden');
+      } else if (type === 'bayar_utang') {
+        titleEl.innerHTML = `<i data-lucide="arrow-up-right" class="w-4 h-4 text-amber-400"></i> Catat Pembayaran Utang Supplier`;
+        lblEntity.innerText = "Nama Supplier";
+        itemsSec.classList.add('hidden');
+        singleSec.classList.remove('hidden');
+      } else if (type === 'bayar_piutang') {
+        titleEl.innerHTML = `<i data-lucide="arrow-down-left" class="w-4 h-4 text-teal-400"></i> Catat Penerimaan Piutang Toko`;
+        lblEntity.innerText = "Nama Toko / Pelanggan";
+        itemsSec.classList.add('hidden');
+        singleSec.classList.remove('hidden');
+      }
+
+      // Fill existing values
+      if (existingData) {
+        document.getElementById('form-date').value = existingData.date;
+        document.getElementById('form-entity').value = existingData.entity;
+        document.getElementById('form-is-paid').checked = existingData.isPaid;
+        document.getElementById('form-notes').value = existingData.notes || '';
+
+        if (type === 'pembelian' || type === 'penjualan') {
+          renderItemRows(existingData.items || []);
+        } else {
+          document.getElementById('form-single-amount').value = existingData.total || 0;
+        }
+      } else {
+        document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('form-entity').value = '';
+        document.getElementById('form-is-paid').checked = true;
+        document.getElementById('form-notes').value = '';
+
+        if (type === 'pembelian' || type === 'penjualan') {
+          renderItemRows([{ name: '', qty: 1, price: '' }]);
+        } else {
+          document.getElementById('form-single-amount').value = '';
+        }
+      }
+
+      calculateFormTotal();
+      document.getElementById('modal-form').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeFormModal() {
+      document.getElementById('modal-form').classList.add('hidden');
+    }
+
+    function renderItemRows(items) {
+      const container = document.getElementById('items-list-container');
+      container.innerHTML = '';
+
+      items.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = "item-row flex items-center gap-2 bg-slate-950 p-2.5 rounded-xl border border-slate-800";
+        div.innerHTML = `
+          <input type="text" placeholder="Nama Barang" required value="${escapeHTML(item.name || '')}" class="item-name flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-brand-500" />
+          <input type="number" min="1" placeholder="Qty" required value="${item.qty || 1}" oninput="calculateFormTotal()" class="item-qty w-14 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-center text-slate-200 focus:outline-none focus:border-brand-500" />
+          <input type="number" min="0" placeholder="Harga Satuan" required value="${item.price || ''}" oninput="calculateFormTotal()" class="item-price w-28 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-brand-500" />
+          <button type="button" onclick="removeItemRow(this)" class="text-slate-500 hover:text-rose-400 p-1">
+            <i data-lucide="minus-circle" class="w-4 h-4"></i>
+          </button>
+        `;
+        container.appendChild(div);
+      });
+      lucide.createIcons();
+    }
+
+    function addItemRow() {
+      const container = document.getElementById('items-list-container');
+      const div = document.createElement('div');
+      div.className = "item-row flex items-center gap-2 bg-slate-950 p-2.5 rounded-xl border border-slate-800";
+      div.innerHTML = `
+        <input type="text" placeholder="Nama Barang" required value="" class="item-name flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-brand-500" />
+        <input type="number" min="1" placeholder="Qty" required value="1" oninput="calculateFormTotal()" class="item-qty w-14 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-center text-slate-200 focus:outline-none focus:border-brand-500" />
+        <input type="number" min="0" placeholder="Harga Satuan" required value="" oninput="calculateFormTotal()" class="item-price w-28 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-brand-500" />
+        <button type="button" onclick="removeItemRow(this)" class="text-slate-500 hover:text-rose-400 p-1">
+          <i data-lucide="minus-circle" class="w-4 h-4"></i>
+        </button>
+      `;
+      container.appendChild(div);
+      lucide.createIcons();
+    }
+
+    function removeItemRow(btn) {
+      const container = document.getElementById('items-list-container');
+      if (container.children.length <= 1) {
+        showToast('Minimal harus ada 1 item barang', 'info');
+        return;
+      }
+      btn.closest('.item-row').remove();
+      calculateFormTotal();
+    }
+
+    function calculateFormTotal() {
+      const type = document.getElementById('form-tx-type').value;
+      let grandTotal = 0;
+
+      if (type === 'pembelian' || type === 'penjualan') {
+        const rows = document.querySelectorAll('.item-row');
+        rows.forEach(row => {
+          const qty = Number(row.querySelector('.item-qty').value || 0);
+          const price = Number(row.querySelector('.item-price').value || 0);
+          grandTotal += (qty * price);
+        });
+      } else {
+        grandTotal = Number(document.getElementById('form-single-amount').value || 0);
+      }
+
+      document.getElementById('form-total-preview').innerText = formatRupiah(grandTotal);
+      return grandTotal;
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('form-tx-id').value || `TX-${Date.now()}`;
+      const type = document.getElementById('form-tx-type').value;
+      const date = document.getElementById('form-date').value;
+      const entity = document.getElementById('form-entity').value.trim();
+      const isPaid = document.getElementById('form-is-paid').checked;
+      const notes = document.getElementById('form-notes').value.trim();
+
+      let items = [];
+      let grandTotal = 0;
+
+      if (type === 'pembelian' || type === 'penjualan') {
+        const rows = document.querySelectorAll('.item-row');
+        rows.forEach(row => {
+          const name = row.querySelector('.item-name').value.trim();
+          const qty = Number(row.querySelector('.item-qty').value || 1);
+          const price = Number(row.querySelector('.item-price').value || 0);
+          items.push({ name, qty, price });
+          grandTotal += (qty * price);
+        });
+      } else {
+        grandTotal = Number(document.getElementById('form-single-amount').value || 0);
+      }
+
+      const txObject = {
+        id,
+        type,
+        date,
+        entity,
+        items,
+        total: grandTotal,
+        isPaid,
+        notes
+      };
+
+      const existingIndex = state.transactions.findIndex(t => t.id === id);
+      if (existingIndex >= 0) {
+        state.transactions[existingIndex] = txObject;
+        showToast('Transaksi berhasil diperbarui', 'success');
+      } else {
+        state.transactions.unshift(txObject);
+        showToast('Transaksi baru berhasil disimpan', 'success');
+      }
+
+      saveLocalStorage();
+      renderApp();
+      closeFormModal();
+
+      // Background Sync to Firebase
+      if (state.firebaseUrl) {
+        syncToFirebase();
+      }
+    }
+
+    function editTransaction(id) {
+      const tx = state.transactions.find(t => t.id === id);
+      if (tx) {
+        openFormModal(tx.type, tx);
+      }
+    }
+
+    function confirmDelete(id) {
+      const modal = document.getElementById('modal-confirm');
+      modal.classList.remove('hidden');
+
+      document.getElementById('confirm-btn-ok').onclick = function() {
+        state.transactions = state.transactions.filter(t => t.id !== id);
+        saveLocalStorage();
+        renderApp();
+        modal.classList.add('hidden');
+        showToast('Transaksi berhasil dihapus', 'info');
+        if (state.firebaseUrl) syncToFirebase();
+      };
+
+      document.getElementById('confirm-btn-cancel').onclick = function() {
+        modal.classList.add('hidden');
+      };
+    }
+
+    // --- QUICK PAYMENT SHORTCUTS ---
+    function quickPayUtang(supplierName, sisaUtang) {
+      openFormModal('bayar_utang', {
+        id: '',
+        type: 'bayar_utang',
+        date: new Date().toISOString().split('T')[0],
+        entity: supplierName,
+        total: sisaUtang,
+        isPaid: true,
+        notes: 'Pelunasan utang supplier'
+      });
+    }
+
+    function quickPayPiutang(storeName, sisaPiutang) {
+      openFormModal('bayar_piutang', {
+        id: '',
+        type: 'bayar_piutang',
+        date: new Date().toISOString().split('T')[0],
+        entity: storeName,
+        total: sisaPiutang,
+        isPaid: true,
+        notes: 'Penerimaan piutang toko'
+      });
+    }
+
+    // --- AUTOCOMPLETE DATALISTS ---
+    function updateDatalists() {
+      const suppliers = new Set();
+      const stores = new Set();
+
+      state.transactions.forEach(t => {
+        if (t.entity) {
+          if (t.type === 'pembelian' || t.type === 'bayar_utang') suppliers.add(t.entity.trim());
+          if (t.type === 'penjualan' || t.type === 'bayar_piutang') stores.add(t.entity.trim());
+        }
+      });
+
+      const supList = document.getElementById('list-suppliers');
+      supList.innerHTML = Array.from(suppliers).map(s => `<option value="${escapeHTML(s)}">`).join('');
+
+      const storeList = document.getElementById('list-stores');
+      storeList.innerHTML = Array.from(stores).map(s => `<option value="${escapeHTML(s)}">`).join('');
+
+      // Attach datalist to entity input based on type
+      const entityInput = document.getElementById('form-entity');
+      const type = document.getElementById('form-tx-type').value;
+      if (type === 'pembelian' || type === 'bayar_utang') {
+        entityInput.setAttribute('list', 'list-suppliers');
+      } else {
+        entityInput.setAttribute('list', 'list-stores');
+      }
+    }
+
+    // --- MODAL & UTILITY DIALOG HANDLERS ---
+    function openFirebaseModal() {
+      document.getElementById('input-fb-url').value = state.firebaseUrl || '';
+      document.getElementById('modal-firebase').classList.remove('hidden');
+    }
+    function closeFirebaseModal() {
+      document.getElementById('modal-firebase').classList.add('hidden');
+    }
+
+    function openUtilityModal() {
+      document.getElementById('modal-utility').classList.remove('hidden');
+    }
+    function closeUtilityModal() {
+      document.getElementById('modal-utility').classList.add('hidden');
+    }
+
+    // JSON EXPORT & IMPORT
+    function exportJSONBackup() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.transactions, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `Backup_KasBuk_Reseller_${new Date().toISOString().split('T')[0]}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('File JSON cadangan berhasil diunduh', 'success');
+      closeUtilityModal();
+    }
+
+    function importJSONBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            state.transactions = imported;
+            normalizeData();
+            saveLocalStorage();
+            renderApp();
+            showToast('Cadangan berhasil dipulihkan!', 'success');
+            if (state.firebaseUrl) syncToFirebase();
+          } else {
+            showToast('Format file JSON tidak valid', 'error');
+          }
+        } catch (err) {
+          showToast('Gagal membaca file JSON', 'error');
+        }
+      };
+      reader.readAsText(file);
+      closeUtilityModal();
+    }
+
+    // CSV EXPORT (EXCEL COMPATIBLE)
+    function exportCSV() {
+      let csv = "ID Transaksi,Tanggal,Jenis Transaksi,Nama Supplier / Toko,Rincian Barang,Status Pembayaran,Total Nominal (Rp),Catatan\n";
+
+      state.transactions.forEach(t => {
+        const jenisMap = {
+          'pembelian': 'Pembelian Supplier',
+          'penjualan': 'Penjualan Toko',
+          'bayar_utang': 'Bayar Utang Supplier',
+          'bayar_piutang': 'Bayar Piutang Toko'
+        };
+
+        const rincian = t.items && t.items.length > 0 ? t.items.map(i => `${i.name} (${i.qty}x${i.price})`).join('; ') : '-';
+        const status = t.isPaid ? 'Tunai / Lunas' : 'Tempo';
+
+        csv += `"${t.id}","${t.date}","${jenisMap[t.type] || t.type}","${t.entity}","${rincian}","${status}",${t.total},"${t.notes || ''}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Laporan_KasBuk_Reseller_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      showToast('File CSV Laporan berhasil diunduh', 'success');
+      closeUtilityModal();
+    }
+
+    // --- HELPER UTILITIES ---
+    function formatRupiah(number) {
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0
+      }).format(Number(number || 0));
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+
+      let bg = 'bg-slate-800 text-slate-100 border-slate-700';
+      if (type === 'success') bg = 'bg-emerald-600 text-white border-emerald-500';
+      if (type === 'error') bg = 'bg-rose-600 text-white border-rose-500';
+
+      toast.className = `p-3 rounded-xl border shadow-xl text-xs font-medium flex items-center justify-between gap-3 pointer-events-auto transition-all transform translate-y-2 opacity-0 ${bg}`;
+      toast.innerHTML = `
+        <span>${msg}</span>
+        <button onclick="this.parentElement.remove()" class="text-white/80 hover:text-white">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function getEmptyStateHTML(text) {
+      return `
+        <div class="text-center py-10 px-4 bg-slate-900/30 rounded-xl border border-dashed border-slate-800">
+          <div class="w-12 h-12 mx-auto rounded-full bg-slate-800 text-slate-500 flex items-center justify-center mb-2">
+            <i data-lucide="inbox" class="w-6 h-6"></i>
+          </div>
+          <p class="text-xs font-medium text-slate-400">${text}</p>
+        </div>
+      `;
+    }
+
+    // --- RICH DEMO SAMPLE DATA ---
+    function getSampleData() {
+      return [
+        {
+          id: "TX-1700000000001",
+          date: "2026-11-18",
+          type: "pembelian",
+          entity: "PT Busana Grosir",
+          items: [
+            { name: "Kemeja Flannel L", qty: 20, price: 65000 },
+            { name: "Celana Chino M", qty: 15, price: 85000 }
+          ],
+          total: 2575000,
+          isPaid: false,
+          notes: "Tempo 14 hari"
+        },
+        {
+          id: "TX-1700000000002",
+          date: "2026-11-19",
+          type: "penjualan",
+          entity: "Toko Barokah Jaya",
+          items: [
+            { name: "Kemeja Flannel L", qty: 5, price: 95000 },
+            { name: "Celana Chino M", qty: 3, price: 120000 }
+          ],
+          total: 835000,
+          isPaid: false,
+          notes: "Dikirim via J&T"
+        },
+        {
+          id: "TX-1700000000003",
+          date: "2026-11-20",
+          type: "bayar_piutang",
+          entity: "Toko Barokah Jaya",
+          items: [],
+          total: 300000,
+          isPaid: true,
+          notes: "DP Transfer BCA"
+        }
+      ];
+    }
+  </script>
+</body>
+</html>
